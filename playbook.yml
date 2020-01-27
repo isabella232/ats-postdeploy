@@ -1,0 +1,30 @@
+---
+- hosts: cloud
+  user: root
+  roles:
+  - ats-setup
+
+- hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    # these values are discovered from the 'cloud' host above
+    ats_key_id:     '{{hostvars[groups["cloud"][0]].ats_key_id}}'
+    ats_secret_key: '{{hostvars[groups["cloud"][0]].ats_secret_key}}'
+    ats_region:     '{{hostvars[groups["cloud"][0]].ats_region}}'
+    ats_ec2_url:    '{{hostvars[groups["cloud"][0]].ats_ec2_url}}'
+    ats_iam_url:    '{{hostvars[groups["cloud"][0]].ats_iam_url}}'
+  roles:
+  - ats-demo
+
+- hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    admin_console_password: '{{hostvars[groups["cloud"][0]].admin_console_password}}'
+    post_install: |
+      Your ATS cloud is now configured!
+
+      The Web console pasword for admin@{{ account }} user is {{ admin_console_password }}
+  roles:
+  - ats-finish

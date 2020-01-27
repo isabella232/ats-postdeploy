@@ -1,0 +1,73 @@
+
+- name: download ATS images catalog
+  uri:
+    url: https://raw.githubusercontent.com/sjones4/eucalyptus-extras/master/images/image-catalog.json
+    return_content: true
+  register: curl
+  failed_when: "'CentOS 7' not in curl.content"
+  when: image_url is not defined
+
+- set_fact:
+    image_url: "{{ curl.content | from_json | json_query('images[?description == `CentOS 7`] | [0].url') }}"
+  when: curl is defined
+
+- set_fact:
+    image_file: "{{ image_url | urlsplit('path') | basename }}"
+
+- set_fact:
+    image_path: "{{ work_dir }}/{{ image_file }}"
+
+- set_fact:
+    raw_path: "{{ image_path | regex_replace('.tar.gz', '') }}"
+    image_name: "CentOS-7-{{ ansible_date_time.iso8601_basic_short }}"
+    bucket_name: "ats-images/{{ ansible_date_time.epoch }}"
+    image_desc: "generic cloud image"
+
+- debug:
+    msg:
+    - "will download image from {{ image_url }}"
+    - "into {{ image_path }}"
+
+- name: download a sample image
+  get_url:
+    url: "{{ image_url }}"
+    dest: "{{ image_path }}"
+    mode: '0440'
+
+- name: uncompress sample image
+  unarchive:
+    src: "{{ image_path }}"
+    dest: "{{ work_dir }}"
+    creates: "{{ raw_path }}"
+    remote_src: true
+    list_files: true
+  register: archive_files
+
+- set_fact:
+    image_file: "{{ work_dir }}/{{ archive_files.files[0] }}"
+  when: archive_files.files is defined
+
+- name: rename image file 
+  command: mv {{ image_file }} {{ raw_path }}
+  when: archive_files.files is defined
+
+- name: install image in ATS
+  shell: /usr/bin/euca-install-image --arch x86_64 --virtualization-type hvm --name {{ image_name }} --image {{ raw_path }} --bucket {{ bucket_name }} --description {{ image_desc }}
+  changed_when: true
+  register: install_output
+
+- set_fact:
+    image_emi: "{{ install_output.stdout | regex_search('(emi-[\\d\\w]+)') }}"
+
+- debug:
+    msg: "{{ install_output }} and {{ image_emi }}"
+
+- name: enable image for everyone
+  shell: /usr/bin/euca-modify-image-attribute -l -a all {{ image_emi }}
+
+- name: tag the image
+  shell: euca-create-tags --tag type=ats-sample-image {{ image_emi }}
+    
+
+  
+

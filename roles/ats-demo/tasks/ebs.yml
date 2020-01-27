@@ -1,0 +1,27 @@
+---
+    - block:
+      - name: discover volumes
+        ec2_vol_info:
+        register: vols 
+
+      - debug:
+          msg: vols
+
+      - name: create some volumes
+        ec2_vol:
+            volume_size: "{{ item }}"
+            instance: None
+            zone: cloud-1a
+            state: "{{ ats_demo_state }}"
+        loop:
+            - 3
+            - 5
+        register: new_volumes
+        when: ats_demo_state == "present"
+    
+      module_defaults:
+        group/aws:
+          ec2_url: "{{ ats_ec2_url }}"
+          aws_access_key: "{{ ats_key_id }}"
+          aws_secret_key: "{{ ats_secret_key }}"
+          region: "eucalyptus"

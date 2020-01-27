@@ -1,0 +1,81 @@
+- name: copying policies
+  copy:
+    src: policies/
+    dest: /root/policies/
+    owner: root
+    group: root
+    mode: 0644
+
+- name: check for an account
+  shell: /usr/bin/euare-accountgetsummary --as-account {{ account|quote }}
+  ignore_errors: true
+  changed_when: false
+  register: account_summary
+
+- name: create an account
+  shell: /usr/bin/euare-accountcreate --account {{ account|quote }} --write-config >{{ inifile_admin|quote }}
+  args:
+    creates: "{{ inifile_admin }}"
+  when: account_summary.rc != 0
+
+- name: discover account number
+  shell: /usr/bin/euare-userlistbypath --as-account poc | grep user/admin
+  changed_when: false
+  register: admin_userpath
+
+- set_fact:
+    account_number: "{{ admin_userpath.stdout | regex_replace('arn:aws:iam::(\\d+):user/admin', '\\1') }}"
+
+- set_fact:
+    region_arg: "{{account_number}}:admin@eucalyptus" # switches profile to admin@poc account
+
+- name: check for SSH key for admin
+  shell: /usr/bin/euca-describe-keypairs --region {{ region_arg|quote }} {{ keyname_admin|quote }}
+  ignore_errors: true
+  changed_when: false
+  register: admin_keysig
+
+- name: create an SSH key for admin 
+  shell: /usr/bin/euca-create-keypair --region {{ region_arg|quote }} --filename {{ keyfile_admin|quote }} {{ keyname_admin|quote }}
+  args:
+    creates: "{{ keyfile_admin }}"
+  when: admin_keysig.rc != 0
+
+- name: check for group
+  shell: /usr/bin/euare-grouplistusers {{ group|quote }} --as-account {{ account|quote }}
+  ignore_errors: true
+  changed_when: false
+  register: group_users
+
+- name: create a group
+  shell: /usr/bin/euare-groupcreate {{ group|quote }} --as-account {{ account|quote }}
+  when: group_users.rc != 0
+
+- name: add a policy
+  shell: /usr/bin/euare-groupuploadpolicy {{ group|quote }} --as-account {{ account|quote }} --policy-name PowerUserAccess --policy-document /root/policies/PowerUserAccess.json
+  when: group_users.rc != 0
+
+- name: authorize SSH to default security group
+  shell: /usr/bin/euca-authorize --region {{ region_arg|quote }} -P tcp -p 22 -s 0.0.0.0/0 default
+
+- name: authorize ping to default security group
+  shell: /usr/bin/euca-authorize --region {{ region_arg|quote }} -P icmp -t -1:-1 -s 0.0.0.0/0 default
+
+- name: check for login profile for admin
+  shell: /usr/bin/euare-usergetloginprofile admin --as-account {{ account|quote }}
+  ignore_errors: true
+  changed_when: false
+  register: admin_profile
+
+- set_fact:
+    admin_console_password: "{{ gen_password }}"
+  when: admin_profile.rc != 0
+
+- name: create login profile for admin
+  shell: /usr/bin/euare-useraddloginprofile admin --password {{ admin_console_password|quote }} --as-account {{ account|quote }}
+  when: admin_profile.rc != 0
+
+- name: create a user
+  shell: /usr/bin/euare-usercreate {{ user|quote }} --group-name {{ group|quote }} --as-account {{ account|quote }} --write-config >{{ inifile_user|quote }}
+  args:
+    creates: "{{ inifile_user }}"

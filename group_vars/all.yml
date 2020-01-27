@@ -1,0 +1,11 @@
+---
+account: poc
+user: alice
+group: power-users
+keyname_admin: "{{ account }}-admin"
+inifile_admin: "/root/.euca/{{ account }}-admin.ini"
+keyfile_admin: "/root/.ssh/{{ account }}-admin.key"
+inifile_user:  "/root/.euca/{{ account }}-{{ user }}.ini"
+work_dir: /tmp
+region: cloud-1 # TODO: discover this
+gen_password: "{{ lookup('password', '/dev/null length=15 chars=ascii_letters') }}"
