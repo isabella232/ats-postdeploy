@@ -2,7 +2,7 @@
 - import_tasks: account.yml
 
 - name: check for instance-store EMIs
-  shell: /usr/bin/euca-describe-images --all --filter root-device-type=instance-store --filter tag:type=ats-sample-image
+  command: /usr/bin/euca-describe-images --all --filter root-device-type=instance-store --filter tag:type=ats-sample-image
   changed_when: false
   register: is_images
 
@@ -10,7 +10,7 @@
   when: is_images.stdout == ""
 
 - name: check for EBS EMIs
-  shell: /usr/bin/euca-describe-images --all --filter root-device-type=ebs --filter tag:type=ats-sample-image
+  command: /usr/bin/euca-describe-images --all --filter root-device-type=ebs --filter tag:type=ats-sample-image
   changed_when: false
   register: ebs_images
 
@@ -27,9 +27,11 @@
     ats_secret_key: "{{ admin_info['content'] | b64decode | regex_findall('secret-key = (.+)') | first }}"
     ats_ec2_url:    "{{ admin_info['content'] | b64decode | regex_findall('ec2-url = (.+)')    | first }}"
     ats_iam_url:    "{{ admin_info['content'] | b64decode | regex_findall('iam-url = (.+)')    | first }}"
+    ats_s3_url:     "{{ admin_info['content'] | b64decode | regex_findall('s3-url = (.+)')     | first }}"
 
 - debug:
     msg:
     - "Key: {{ ats_key_id }}"
     - "EC2 endpoint: {{ ats_ec2_url }}"
     - "IAM endpoint: {{ ats_iam_url }}"
+    - "S3 endpoint:  {{ ats_s3_url }}"

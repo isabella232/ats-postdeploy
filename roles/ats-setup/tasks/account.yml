@@ -7,19 +7,23 @@
     mode: 0644
 
 - name: check for an account
-  shell: /usr/bin/euare-accountgetsummary --as-account {{ account|quote }}
+  command: /usr/bin/euare-accountgetsummary 
+    --as-account {{ account|quote }}
   ignore_errors: true
   changed_when: false
   register: account_summary
 
 - name: create an account
-  shell: /usr/bin/euare-accountcreate --account {{ account|quote }} --write-config >{{ inifile_admin|quote }}
-  args:
-    creates: "{{ inifile_admin }}"
+  shell: /usr/bin/euare-accountcreate 
+    --account {{ account|quote }} 
+    --write-config >{{ inifile_admin|quote }}
   when: account_summary.rc != 0
 
 - name: discover account number
-  shell: /usr/bin/euare-userlistbypath --as-account poc | grep user/admin
+  shell: >
+    /usr/bin/euare-userlistbypath 
+    --as-account {{ account|quote }} 
+    | grep user/admin
   changed_when: false
   register: admin_userpath
 
@@ -30,39 +34,56 @@
     region_arg: "{{account_number}}:admin@eucalyptus" # switches profile to admin@poc account
 
 - name: check for SSH key for admin
-  shell: /usr/bin/euca-describe-keypairs --region {{ region_arg|quote }} {{ keyname_admin|quote }}
+  command: /usr/bin/euca-describe-keypairs
+    --region {{ region_arg|quote }}
+    {{ keyname_admin|quote }}
   ignore_errors: true
   changed_when: false
   register: admin_keysig
 
 - name: create an SSH key for admin 
-  shell: /usr/bin/euca-create-keypair --region {{ region_arg|quote }} --filename {{ keyfile_admin|quote }} {{ keyname_admin|quote }}
-  args:
-    creates: "{{ keyfile_admin }}"
+  command: /usr/bin/euca-create-keypair
+    --region {{ region_arg|quote }}
+    --filename {{ keyfile_admin|quote }}
+    {{ keyname_admin|quote }}
   when: admin_keysig.rc != 0
 
 - name: check for group
-  shell: /usr/bin/euare-grouplistusers {{ group|quote }} --as-account {{ account|quote }}
+  command: /usr/bin/euare-grouplistusers
+    --as-account {{ account|quote }}
+    {{ group|quote }}
   ignore_errors: true
   changed_when: false
   register: group_users
 
 - name: create a group
-  shell: /usr/bin/euare-groupcreate {{ group|quote }} --as-account {{ account|quote }}
+  command: /usr/bin/euare-groupcreate
+    --as-account {{ account|quote }}
+    {{ group|quote }}
   when: group_users.rc != 0
 
 - name: add a policy
-  shell: /usr/bin/euare-groupuploadpolicy {{ group|quote }} --as-account {{ account|quote }} --policy-name PowerUserAccess --policy-document /root/policies/PowerUserAccess.json
+  command: /usr/bin/euare-groupuploadpolicy
+    --as-account {{ account|quote }}
+    {{ group|quote }}
+    --policy-name PowerUserAccess
+    --policy-document /root/policies/PowerUserAccess.json
   when: group_users.rc != 0
 
 - name: authorize SSH to default security group
-  shell: /usr/bin/euca-authorize --region {{ region_arg|quote }} -P tcp -p 22 -s 0.0.0.0/0 default
+  command: /usr/bin/euca-authorize
+    --region {{ region_arg|quote }}
+    -P tcp -p 22 -s 0.0.0.0/0 default
 
 - name: authorize ping to default security group
-  shell: /usr/bin/euca-authorize --region {{ region_arg|quote }} -P icmp -t -1:-1 -s 0.0.0.0/0 default
+  command: /usr/bin/euca-authorize
+    --region {{ region_arg|quote }}
+    -P icmp -t -1:-1 -s 0.0.0.0/0 default
 
 - name: check for login profile for admin
-  shell: /usr/bin/euare-usergetloginprofile admin --as-account {{ account|quote }}
+  command: /usr/bin/euare-usergetloginprofile
+    --as-account {{ account|quote }}
+    admin
   ignore_errors: true
   changed_when: false
   register: admin_profile
@@ -72,10 +93,17 @@
   when: admin_profile.rc != 0
 
 - name: create login profile for admin
-  shell: /usr/bin/euare-useraddloginprofile admin --password {{ admin_console_password|quote }} --as-account {{ account|quote }}
+  command: /usr/bin/euare-useraddloginprofile
+    --as-account {{ account|quote }}
+    --password {{ admin_console_password|quote }}
+    admin
   when: admin_profile.rc != 0
 
 - name: create a user
-  shell: /usr/bin/euare-usercreate {{ user|quote }} --group-name {{ group|quote }} --as-account {{ account|quote }} --write-config >{{ inifile_user|quote }}
+  shell: /usr/bin/euare-usercreate
+    --as-account {{ account|quote }}
+    {{ user|quote }}
+    --group-name {{ group|quote }}
+    --write-config >{{ inifile_user|quote }}
   args:
     creates: "{{ inifile_user }}"

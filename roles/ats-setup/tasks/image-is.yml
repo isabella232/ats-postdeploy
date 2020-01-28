@@ -52,7 +52,13 @@
   when: archive_files.files is defined
 
 - name: install image in ATS
-  shell: /usr/bin/euca-install-image --arch x86_64 --virtualization-type hvm --name {{ image_name }} --image {{ raw_path }} --bucket {{ bucket_name }} --description {{ image_desc }}
+  command: /usr/bin/euca-install-image
+    --arch x86_64
+    --virtualization-type hvm
+    --name {{ image_name }}
+    --image {{ raw_path }}
+    --bucket {{ bucket_name }}
+    --description {{ image_desc }}
   changed_when: true
   register: install_output
 
@@ -63,7 +69,7 @@
     msg: "{{ install_output }} and {{ image_emi }}"
 
 - name: enable image for everyone
-  shell: /usr/bin/euca-modify-image-attribute -l -a all {{ image_emi }}
+  command: /usr/bin/euca-modify-image-attribute -l -a all {{ image_emi }}
 
 - name: tag the image
   shell: euca-create-tags --tag type=ats-sample-image {{ image_emi }}
