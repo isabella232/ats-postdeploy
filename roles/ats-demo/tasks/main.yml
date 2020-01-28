@@ -1,3 +1,36 @@
 ---
+- name: ensure AWSCLI is installed
+  command: aws help
+  changed_when: false
+
+- name: check if account admin has a profile
+  command: aws --output text --profile {{ profile_admin }}
+    configure get aws_access_key_id
+  register: config_access_key_id
+  ignore_errors: true
+  changed_when: false
+
+- name: ensure account admin has a profile in .aws/config and .aws/credentials
+  shell: |
+    aws --profile {{ profile_admin }} configure set aws_access_key_id {{ ats_key_id }}
+    aws --profile {{ profile_admin }} configure set aws_secret_access_key {{ ats_secret_key }}
+    aws --profile {{ profile_admin }} configure set region eucalyptus
+  when: config_access_key_id.stdout != ats_key_id
+
+- set_fact: # prefix for all AWSCLI invocations that follow
+    aws_cli: "aws --profile {{ profile_admin }} --output json --region eucalyptus"
+
+- set_fact: # shortcuts for AWSCLI invocations of specific endpoints
+    aws_ec2: "{{ aws_cli }} --endpoint-url {{ ats_ec2_url }} ec2"
+    aws_iam: "{{ aws_cli }} --endpoint-url {{ ats_iam_url }} iam"
+    aws_s3:  "{{ aws_cli }} --endpoint-url {{ ats_s3_url }} s3"
+
+- name: test the endpoints with AWSCLI
+  shell: |
+    {{ aws_ec2 }} describe-regions
+    {{ aws_iam }} get-account-summary
+    {{ aws_s3  }} ls
+  changed_when: false
+
 - import_tasks: ebs.yml
 - import_tasks: iam.yml

@@ -3,6 +3,7 @@ account: poc
 user: alice
 group: power-users
 keyname_admin: "{{ account }}-admin"
+profile_admin: "ats-{{ account }}-admin"
 inifile_admin: "/root/.euca/{{ account }}-admin.ini"
 keyfile_admin: "/root/.ssh/{{ account }}-admin.key"
 inifile_user:  "/root/.euca/{{ account }}-{{ user }}.ini"
