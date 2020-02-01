@@ -1,0 +1,14 @@
+---
+demo_groups:
+    - { name: administrators, policy: AdministratorAccess }
+    - { name: read-only,      policy: ViewOnlyAccess }
+    
+demo_users:
+    - { name: bob,   group: administrators }
+    - { name: carol, group: administrators }
+    - { name: 'dan',   group: 'administrators' }
+    - { name: 'eve',   group: 'administrators' }
+    - { name: 'frank', group: 'read-only' }
+    - { name: 'grace', group: 'read-only' }
+    - { name: 'heidi', group: 'read-only' }
+    - { name: 'ivan',  group: 'read-only' }

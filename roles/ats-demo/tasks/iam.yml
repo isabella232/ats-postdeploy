@@ -1,60 +1,42 @@
 ---
-- block:
-  - name: removing IAM groups
-    iam_group:
-      name:  "{{ item }}"
-      state: "{{ ats_demo_state }}"
-    loop:
-      - administrators
-      - read-only
-    when: ats_demo_state == "absent"
+- name: discover policies
+  command: "{{ aws_iam }} list-policies"
+  register: list_policies
+  changed_when: false
 
-  - name: IAM users
-    iam_user:
-      name:  "{{ item }}"
-      state: "{{ ats_demo_state }}"
-    loop:
-      - bob
-      - carol
-      - dan
-      - eve
-      - frank
-      - grace
-      - heidi
-      - ivan
+- name: parse policies
+  set_fact:
+    current_policies: "{{ list_policies.stdout | from_json | json_query('Policies') }}"
 
-  - name: IAM groups
-    iam_group:
-      name:  "{{ item.name }}"
-      users: "{{ item.members }}"
-      state: "{{ ats_demo_state }}"
-    loop:
-      - { name: 'administrators', members: [ 'bob', 'carol', 'dan', 'eve' ] }
-      - { name: 'read-only', members: [ 'frank', 'grace', 'heidi', 'ivan' ] }
-    when: ats_demo_state == "present"
+- name: discover groups
+  command: "{{ aws_iam }} list-groups"
+  register: list_groups
+  changed_when: false
 
-  - name: get sts token
-    sts_session_token:
-      duration_seconds: 3600
-      ec2_url: "http://sts.ciab-147-75-109-3.euca.me:8773/"
-    register: creds
+- name: parse groups
+  set_fact:
+    current_groups: "{{ list_groups.stdout | from_json | json_query('Groups') }}"
 
-  - name: assign read-only policy
-    iam_policy: # this module requires the old 'boto'
-      debug_botocore_endpoint_logs: true
-      aws_access_key: "{{ creds.sts_creds.access_key }}"
-      aws_secret_key: "{{ creds.sts_creds.secret_key }}"
-      security_token: "{{ creds.sts_creds.session_token }}"
-      ec2_url: "http://iam.ciab-147-75-109-3.euca.me:8773/"
-      iam_type: group
-      iam_name: 'read-only'
-      policy_name: ViewOnlyAccess
-      state: "{{ ats_demo_state }}"
-      policy_document: "{{ role_path }}/files/ViewOnlyAccess.json" # https://github.com/ansible/ansible/issues/19249
+- name: discover users
+  command: "{{ aws_iam }} list-users"
+  register: list_users
+  changed_when: false
 
-  module_defaults:
-    group/aws:
-      ec2_url: "{{ ats_iam_url }}"
-      aws_access_key: "{{ ats_key_id }}"
-      aws_secret_key: "{{ ats_secret_key }}"
+- name: parse users
+  set_fact:
+    current_users: "{{ list_users.stdout | from_json | json_query('Users') }}"
+
+- name: work on groups and policies
+  include_tasks: iam-groups.yml
+  loop: "{{ demo_groups }}"
+  when: ats_demo_state == "present" # create policies and groups before creating users
+
+- name: work on users
+  include_tasks: iam-users.yml
+  loop: "{{ demo_users }}"
+
+- name: work on groups and policies
+  include_tasks: iam-groups.yml
+  loop: "{{ demo_groups }}"
+  when: ats_demo_state == "absent" # delete policies and groups after deleting users
 

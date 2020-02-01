@@ -3,18 +3,6 @@
   user: root
   roles:
   - ats-setup
-
-- hosts: localhost
-  connection: local
-  gather_facts: false
-  vars:
-    # these values are discovered from the 'cloud' host above
-    ats_key_id:     '{{hostvars[groups["cloud"][0]].ats_key_id}}'
-    ats_secret_key: '{{hostvars[groups["cloud"][0]].ats_secret_key}}'
-    ats_region:     '{{hostvars[groups["cloud"][0]].ats_region}}'
-    ats_ec2_url:    '{{hostvars[groups["cloud"][0]].ats_ec2_url}}'
-    ats_iam_url:    '{{hostvars[groups["cloud"][0]].ats_iam_url}}'
-  roles:
   - ats-demo
 
 - hosts: localhost

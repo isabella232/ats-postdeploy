@@ -1,0 +1,9 @@
+---
+- debug:
+    msg: "working on users"
+
+# iam create-user --user-name alicia --path /ats-demo
+# add-user-to-group --user-name alicia --group-name ballers
+# 
+# iam remove-user-from-group --user-name alicia --group-name ballers
+# iam delete-user --user-name alicia

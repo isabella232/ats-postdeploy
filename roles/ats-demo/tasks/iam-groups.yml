@@ -1,0 +1,54 @@
+---
+- set_fact:
+    group_match: "{{ current_groups | selectattr('GroupName', 'equalto', item.name) | list }}"
+    policy_match: "{{ current_policies | selectattr('PolicyName', 'equalto', item.policy) | list }}"
+
+# creation commands, in the necessary order
+
+- name: create policy
+  command: "{{ aws_iam }} create-policy 
+    --policy-name {{ item.policy | quote }} 
+    --policy-document file:///root/policies/{{ item.policy }}.json"
+  register: new_policy
+  when: (ats_demo_state == "present") and (not policy_match)
+
+- set_fact:
+    policy_arn: "{{ new_policy.stdout | from_json | json_query('Policy.Arn') }}"
+  when: new_policy.changed
+
+- set_fact:
+    policy_arn: "{{ policy_match[0].Arn }}"
+  when: policy_match | length > 0
+
+- name: create group
+  command: "{{ aws_iam }} create-group 
+    --group-name {{ item.name | quote }}
+    --path /ats-demo"
+  register: new_group
+  when: (ats_demo_state == "present") and (not group_match)
+
+- name: attach policy to group
+  command: "{{ aws_iam }} attach-group-policy
+    --group-name {{ item.name | quote }}
+    --policy-arn {{ policy_arn | quote }}"
+  when: (ats_demo_state == "present") and (not group_match)
+
+# deletion commands, in the order reverse of creation
+
+- name: detach policy from group
+  command: "{{ aws_iam }} detach-group-policy
+    --group-name {{ item.name | quote }}
+    --policy-arn {{ policy_match[0].Arn | quote }}"
+  when: (ats_demo_state == "absent") and (policy_match) and (group_match)
+  ignore_errors: true # since we don't verify attachment prior to detaching
+
+- name: delete group
+  command: "{{ aws_iam }} delete-group
+    --group-name {{ item.name | quote }}"
+  when: (ats_demo_state == "absent") and (group_match)
+
+- name: delete policy
+  command: "{{ aws_iam }} delete-policy
+    --policy-arn {{ policy_match[0].Arn | quote }}"
+  when: (ats_demo_state == "absent") and (policy_match)
+    
