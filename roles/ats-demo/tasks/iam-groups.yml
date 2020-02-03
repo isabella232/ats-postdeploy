@@ -6,8 +6,8 @@
 # creation commands, in the necessary order
 
 - name: create policy
-  command: "{{ aws_iam }} create-policy 
-    --policy-name {{ item.policy | quote }} 
+  command: "{{ aws_iam }} create-policy
+    --policy-name {{ item.policy | quote }}
     --policy-document file:///root/policies/{{ item.policy }}.json"
   register: new_policy
   when: (ats_demo_state == "present") and (not policy_match)
@@ -21,7 +21,7 @@
   when: policy_match | length > 0
 
 - name: create group
-  command: "{{ aws_iam }} create-group 
+  command: "{{ aws_iam }} create-group
     --group-name {{ item.name | quote }}
     --path /ats-demo"
   register: new_group
@@ -51,4 +51,3 @@
   command: "{{ aws_iam }} delete-policy
     --policy-arn {{ policy_match[0].Arn | quote }}"
   when: (ats_demo_state == "absent") and (policy_match)
-    
