@@ -1,9 +1,30 @@
 ---
-- debug:
-    msg: "working on users"
+- set_fact:
+    user_match: "{{ current_users | selectattr('UserName', 'equalto', item.name) | list }}"
 
-# iam create-user --user-name alicia --path /ats-demo
-# add-user-to-group --user-name alicia --group-name ballers
-#
-# iam remove-user-from-group --user-name alicia --group-name ballers
-# iam delete-user --user-name alicia
+# creation commands, in the necessary order
+
+- name: create user
+  command: "{{ aws_iam }} create-user
+    --user-name {{ item.name | quote }}
+    --path /ats-demo"
+  when: (ats_demo_state == "present") and (not user_match)
+
+- name: add user to group
+  command: "{{ aws_iam }} add-user-to-group
+    --user-name {{ item.name | quote }}
+    --group-name {{ item.group | quote }}"
+  when: (ats_demo_state == "present") and (not user_match)
+
+# deletion commands, in the order reverse of creation
+
+- name: remove user from group
+  command: "{{ aws_iam }} remove-user-from-group
+    --user-name {{ item.name | quote }}
+    --group-name {{ item.group | quote }}"
+  when: (ats_demo_state == "absent") and (user_match)
+
+- name: delete user
+  command: "{{ aws_iam }} delete-user
+    --user-name {{ item.name | quote }}"
+  when: (ats_demo_state == "absent") and (user_match)
