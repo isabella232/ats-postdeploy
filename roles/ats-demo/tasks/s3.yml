@@ -1,0 +1,39 @@
+---
+- name: copying cat pictures
+  copy:
+    src: cats/
+    dest: /root/cats/
+    owner: root
+    group: root
+    mode: 0644
+
+# creation commands, in the necessary order
+
+- name: create buckets
+  command: "{{ aws_s3 }} mb s3://{{ item }}"
+  with_items: "{{ demo_buckets }}"
+  when: ats_demo_state == "present"
+  ignore_errors: true # since we don't bother checking current s3 state
+
+- name: create objects
+  command: "{{ aws_s3 }} cp 
+    {{ item.src }}{{ item.file }}
+    s3://{{ item.dst }}/{{ item.file }}
+    --acl {{ item.acl }}"
+  with_items: "{{ demo_objects }}"
+  when: ats_demo_state == "present"
+  ignore_errors: true # since we don't bother checking current s3 state
+
+# deletion commands, in the order reverse of creation
+
+- name: delete objects
+  command: "{{ aws_s3 }} rm s3://{{ item.dst }}/{{ item.file }}"
+  with_items: "{{ demo_objects }}"
+  when: ats_demo_state == "absent"
+  ignore_errors: true # since we don't bother checking current s3 state
+
+- name: delete buckets
+  command: "{{ aws_s3 }} rb s3://{{ item }}"
+  with_items: "{{ demo_buckets }}"
+  when: ats_demo_state == "absent"
+  ignore_errors: true # since we don't bother checking current s3 state

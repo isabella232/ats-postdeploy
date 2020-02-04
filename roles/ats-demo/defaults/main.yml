@@ -18,9 +18,9 @@ demo_buckets:
     - ats-cat-pictures
 
 demo_objects:
-    - { file: AdministratorAccess.json, src: /root/policies/, dst: ats-demo-policies }
-    - { file: PowerUserAccess.json,     src: /root/policies/, dst: ats-demo-policies }
-    - { file: ViewOnlyAccess.json,      src: /root/policies/, dst: ats-demo-policies }
-    - { file: kitten-in-a-box.jpg,      src: /root/cats/,     dst: ats-cat-pictures }
-    - { file: kitten-in-a-pocket.jpg,   src: /root/cats/,     dst: ats-cat-pictures }
-    - { file: kitten-under-carpet.jpg,  src: /root/cats/,     dst: ats-cat-pictures }
+    - { file: AdministratorAccess.json, src: /root/policies/, dst: ats-demo-policies, acl: private }
+    - { file: PowerUserAccess.json,     src: /root/policies/, dst: ats-demo-policies, acl: private }
+    - { file: ViewOnlyAccess.json,      src: /root/policies/, dst: ats-demo-policies, acl: private }
+    - { file: kitten-in-a-box.jpg,      src: /root/cats/,     dst: ats-cat-pictures,  acl: public-read }
+    - { file: kitten-in-a-pocket.jpg,   src: /root/cats/,     dst: ats-cat-pictures,  acl: public-read }
+    - { file: kitten-under-carpet.jpg,  src: /root/cats/,     dst: ats-cat-pictures,  acl: public-read }
