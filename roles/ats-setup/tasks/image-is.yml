@@ -55,10 +55,10 @@
   command: /usr/bin/euca-install-image
     --arch x86_64
     --virtualization-type hvm
-    --name {{ image_name }}
-    --image {{ raw_path }}
-    --bucket {{ bucket_name }}
-    --description {{ image_desc }}
+    --name {{ image_name | quote }}
+    --image {{ raw_path | quote }}
+    --bucket {{ bucket_name | quote }}
+    --description {{ image_desc | quote }}
   changed_when: true
   register: install_output
 
@@ -69,10 +69,10 @@
     msg: "{{ install_output }} and {{ image_emi }}"
 
 - name: enable image for everyone
-  command: /usr/bin/euca-modify-image-attribute -l -a all {{ image_emi }}
+  command: /usr/bin/euca-modify-image-attribute -l -a all {{ image_emi | quote }}
 
 - name: tag the image
-  shell: euca-create-tags --tag type=ats-sample-image {{ image_emi }}
+  shell: euca-create-tags --tag type=ats-sample-image {{ image_emi | quote }}
     
 
   
