@@ -6,9 +6,21 @@ demo_groups:
 demo_users:
     - { name: bob,   group: administrators }
     - { name: carol, group: administrators }
-    - { name: 'dan',   group: 'administrators' }
-    - { name: 'eve',   group: 'administrators' }
-    - { name: 'frank', group: 'read-only' }
-    - { name: 'grace', group: 'read-only' }
-    - { name: 'heidi', group: 'read-only' }
-    - { name: 'ivan',  group: 'read-only' }
+    - { name: dan,   group: administrators }
+    - { name: eve,   group: administrators }
+    - { name: frank, group: read-only }
+    - { name: grace, group: read-only }
+    - { name: heidi, group: read-only }
+    - { name: ivan,  group: read-only }
+
+demo_buckets:
+    - ats-demo-policies
+    - ats-cat-pictures
+
+demo_objects:
+    - { file: AdministratorAccess.json, src: /root/policies/, dst: ats-demo-policies }
+    - { file: PowerUserAccess.json,     src: /root/policies/, dst: ats-demo-policies }
+    - { file: ViewOnlyAccess.json,      src: /root/policies/, dst: ats-demo-policies }
+    - { file: kitten-in-a-box.jpg,      src: /root/cats/,     dst: ats-cat-pictures }
+    - { file: kitten-in-a-pocket.jpg,   src: /root/cats/,     dst: ats-cat-pictures }
+    - { file: kitten-under-carpet.jpg,  src: /root/cats/,     dst: ats-cat-pictures }
