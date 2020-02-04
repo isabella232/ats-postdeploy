@@ -1,5 +1,62 @@
 ---
 - name: discover volumes
-  command: "{{ aws_ec2 }} describe-volumes"
-  register: current_vols
+  command: "{{ aws_ec2 }} describe-volumes
+    --filters 'Name=tag:purpose,Values=ats-demo'
+    'Name=status,Values=available'"
+  register: describe_vols
   changed_when: false
+
+- name: discover snapshots
+  command: "{{ aws_ec2 }} describe-snapshots
+    --filters 'Name=tag:purpose,Values=ats-demo'
+    'Name=status,Values=completed'"
+  register: describe_snaps
+  changed_when: false
+
+- name: parse volumes and snapshots
+  set_fact:
+    current_vols:  "{{ describe_vols.stdout  | from_json | json_query('Volumes') }}"
+    current_snaps: "{{ describe_snaps.stdout | from_json | json_query('Snapshots') }}"
+
+- name: create volumes
+  command: "{{ aws_ec2 }} create-volume
+    --size {{ item }}
+    --availability-zone {{ current_az }}
+    --tag-specifications ResourceType=volume,Tags=[{Key=purpose,Value=ats-demo}]"
+  with_items:
+    - 3
+    - 5
+    - 7
+  when: (ats_demo_state == "present") and ( not current_vols )
+  register: created_vols
+
+- set_fact:
+    first_vol_id: "{{ created_vols.results[0].stdout | from_json | json_query('VolumeId') }}"
+  when: (ats_demo_state == "present") and ( not current_vols )
+
+- name: create a snapshot
+  command: "{{ aws_ec2 }} create-snapshot --volume-id {{ first_vol_id }}"
+  when: (ats_demo_state == "present") and ( not current_vols )
+  register: create_snap
+
+- set_fact:
+    snap_id: "{{ create_snap.stdout | from_json | json_query('SnapshotId') }}"
+  when: (ats_demo_state == "present") and ( not current_vols )
+
+- name: tag the snapshot
+  command: "{{ aws_ec2 }} create-tags
+    --resource {{ snap_id }}
+    --tags 'Key=purpose,Value=ats-demo'"
+  when: (ats_demo_state == "present") and ( not current_vols )
+
+- name: delete volumes
+  command: "{{ aws_ec2 }} delete-volume
+    --volume-id {{ item.VolumeId }}"
+  with_items: "{{ current_vols }}"
+  when: ats_demo_state == "absent"
+
+- name: delete snapshots
+  command: "{{ aws_ec2 }} delete-snapshot
+    --snapshot-id {{ item.SnapshotId }}"
+  with_items: "{{ current_snaps }}"
+  when: ats_demo_state == "absent"

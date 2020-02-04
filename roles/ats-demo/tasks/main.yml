@@ -32,5 +32,21 @@
     {{ aws_s3  }} ls
   changed_when: false
 
+- name: find AZ
+  command: "{{ aws_ec2 }} describe-availability-zones"
+  register: describe_az
+  changed_when: false
+
+- name: parse region and AZ
+  set_fact:
+    current_az:     "{{ describe_az.stdout | from_json | json_query('AvailabilityZones | [0].ZoneName') }}"
+    current_region: "{{ describe_az.stdout | from_json | json_query('AvailabilityZones | [0].RegionName') }}"
+
+- debug:
+    msg:
+      - "REGION: {{ current_region }}"
+      - "AVAILABILITY ZONE: {{ current_az }}"
+
 - import_tasks: ebs.yml
 - import_tasks: iam.yml
+- import_tasks: s3.yml
