@@ -1,2 +1,3 @@
 - name: display post install message
   debug: msg={{ post_install.split('\n') }}
+  when: hostvars[groups["cloud"][0]].admin_console_password is defined
