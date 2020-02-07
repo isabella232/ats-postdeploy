@@ -9,3 +9,4 @@ keyfile_admin: "/root/.ssh/{{ account }}-admin.key"
 inifile_user:  "/root/.euca/{{ account }}-{{ user }}.ini"
 work_dir: /tmp
 gen_password: "{{ lookup('password', '/dev/null length=15 chars=ascii_letters') }}"
+eucaconsole_admin_password: "" # by default, generate a random password

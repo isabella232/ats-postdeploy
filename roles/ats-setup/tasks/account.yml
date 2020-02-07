@@ -93,12 +93,23 @@
     admin_console_password: "{{ gen_password }}"
   when: admin_profile.rc != 0
 
+- set_fact:
+    admin_console_password: "{{ eucaconsole_admin_password }}"
+  when: eucaconsole_admin_password != ""
+
 - name: create login profile for admin
   command: /usr/bin/euare-useraddloginprofile
     --as-account {{ account | quote }}
     --password {{ admin_console_password | quote }}
     admin
   when: admin_profile.rc != 0
+
+- name: update login profile for admin
+  command: /usr/bin/euare-usermodloginprofile
+    --as-account {{ account | quote }}
+    --password {{ admin_console_password | quote }}
+    admin
+  when: admin_profile.rc == 0 and admin_console_password is defined
 
 - name: create a user
   shell: /usr/bin/euare-usercreate
