@@ -1,6 +1,8 @@
 ---
 - set_fact:
-    user_match: "{{ current_users | selectattr('UserName', 'equalto', item.name) | list }}"
+    user_match: "{{ current_users | json_query(user_query) }}"
+  vars:
+    user_query:  "[?UserName=='{{ item.name }}']"
 
 # creation commands, in the necessary order
 

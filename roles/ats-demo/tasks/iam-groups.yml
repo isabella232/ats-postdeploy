@@ -1,7 +1,10 @@
 ---
 - set_fact:
-    group_match: "{{ current_groups | selectattr('GroupName', 'equalto', item.name) | list }}"
-    policy_match: "{{ current_policies | selectattr('PolicyName', 'equalto', item.policy) | list }}"
+    group_match:  "{{ current_groups   | json_query(group_query) }}"
+    policy_match: "{{ current_policies | json_query(policy_query) }}"
+  vars:
+    group_query:  "[?GroupName=='{{ item.name }}']"
+    policy_query: "[?PolicyName=='{{ item.policy }}']"
 
 # creation commands, in the necessary order
 
